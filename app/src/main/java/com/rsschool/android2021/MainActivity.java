@@ -1,44 +1,72 @@
-package com.rsschool.android2021;
+package com.rsschool.android2021
 
-import android.os.Bundle;
+import android.content.Context
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.TextView
+import androidx.fragment.app.Fragment
 
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
+interface OpenFirstFragment{
+    fun openFirst(result: Int)
+}
 
-public class MainActivity extends AppCompatActivity
-    implements OpenSecondFragment,
-        OpenFirstFragment{
+class SecondFragment : Fragment() {
 
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        openFirstFragment(0);
+    private var listen: OpenFirstFragment? = null
+    private var backButton: Button? = null
+    private var result: TextView? = null
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_second, container, false)
     }
 
-    private void openFirstFragment(int previousNumber) {
-        final Fragment firstFragment = FirstFragment.newInstance(previousNumber);
-        final FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.container, firstFragment);
-        transaction.addToBackStack(null).commit();
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if(context is OpenFirstFragment) listen = context
     }
 
-    private void openSecondFragment(int min, int max) {
-        final Fragment secondFragment = SecondFragment.newInstance(min, max);
-        final FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.container, secondFragment);
-        transaction.addToBackStack(null).commit();
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        result = view.findViewById(R.id.result)
+        backButton = view.findViewById(R.id.back)
+
+        val min = arguments?.getInt(MIN_VALUE_KEY) ?: 0
+        val max = arguments?.getInt(MAX_VALUE_KEY) ?: 0
+
+        val randomValue = generate(min, max)
+        result?.text = randomValue.toString()
+
+        backButton?.setOnClickListener {
+            listen?.openFirst(randomValue)
+        }
     }
-    @Override
-    public void openFirst(int result)
-    {
-        openFirstFragment(result);
+
+    private fun generate(min: Int, max: Int): Int {
+        return if(min < max) {
+            (min..max).random()
+        } else 0
     }
-    @Override
-    public void openSecond(int min, int max)
-    {
-        openSecondFragment(min, max);
+
+    companion object {
+
+        @JvmStatic
+        fun newInstance(min: Int, max: Int): SecondFragment {
+            val fragment = SecondFragment()
+            val args = Bundle()
+            args.putInt(MIN_VALUE_KEY, min)
+            args.putInt(MAX_VALUE_KEY, max)
+            fragment.arguments = args
+            return fragment
+        }
+
+        private const val MIN_VALUE_KEY = "MIN_VALUE"
+        private const val MAX_VALUE_KEY = "MAX_VALUE"
     }
 }
